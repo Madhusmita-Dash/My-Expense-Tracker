@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="et1" type="id" />
+    <item name="et2" type="id" />
+    <item name="et3" type="id" />
+    <item name="et4" type="id" />
+    <item name="btn1" type="id" />
+    <item name="ftr" type="id" />
+    <item name="tvSignUp" type="id" />
+</resources>

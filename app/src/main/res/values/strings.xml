@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Expense Tracker</string>
+    <string name="welcome">welcome to the app</string>
+    <string name="image_of_a_splashscreen">Image of a splashscreen</string>
+    <string name="spend_smarter_nsave_more">Spend Smarter\nSave More</string>
+    <string name="get_started">Get Started</string>
+    <string name="already_have_account_log_in">Already Have Account? Log In</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

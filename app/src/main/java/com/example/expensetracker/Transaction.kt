@@ -2,13 +2,10 @@ package com.example.expensetracker
 
 
 import java.util.Date
-
 data class Transaction(
-    var type: String = "",
-    var category: String = "",
     var account: String = "",
-    var note: String = "",
-    var date: Date = Date(),
+    var category: String = "",
+    var date: String = "",  // Ensure the date is in "dd-MMM-yyyy" format
     var amount: Double = 0.0,
-    var id: Long = 0L
+    var type: String = ""   // Either Constant.INCOME or Constant.EXPENSE
 )

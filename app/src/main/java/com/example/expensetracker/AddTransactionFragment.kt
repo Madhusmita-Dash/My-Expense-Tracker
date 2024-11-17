@@ -2,18 +2,21 @@ package com.example.expensetracker
 
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.core.content.ContextCompat
 import com.example.expensetracker.databinding.FragmentAddTransactionBinding
 import com.example.expensetracker.databinding.ListDialogBinding
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.recyclerview.widget.GridLayoutManager
 
 class AddTransactionFragment : Fragment() {
 
@@ -22,19 +25,34 @@ class AddTransactionFragment : Fragment() {
 
     private lateinit var transaction: Transaction
 
+    interface OnTransactionSavedListener {
+        fun onTransactionSaved(transaction: Transaction)
+    }
+
+    private var listener: OnTransactionSavedListener? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is OnTransactionSavedListener) {
+            listener = context
+        } else {
+            throw RuntimeException("$context must implement OnTransactionSavedListener")
+        }
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        listener = null
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAddTransactionBinding.inflate(inflater, container, false)
-
-        // Initialize transaction object
-        transaction = Transaction()
-
-        // Set up the listeners for the buttons
+        transaction = Transaction() // Initialize a new transaction object
         setupListeners()
-
         return binding.root
     }
 
@@ -54,33 +72,79 @@ class AddTransactionFragment : Fragment() {
             showDatePickerDialog()
         }
 
-        // Set up the listeners for income and expense buttons
+        // Listener for the income button
         binding.incomeBtn.setOnClickListener {
             binding.incomeBtn.setBackgroundResource(R.drawable.income_selector)
             binding.expenseBtn.setBackgroundResource(R.drawable.default_selector)
-            binding.expenseBtn.setTextColor(resources.getColor(R.color.textColor))
-            binding.incomeBtn.setTextColor(resources.getColor(R.color.greenColor))
-
-            transaction.type = Constants.INCOME
+            binding.incomeBtn.setTextColor(ContextCompat.getColor(requireContext(), R.color.greenColor))
+            binding.expenseBtn.setTextColor(ContextCompat.getColor(requireContext(), R.color.textColor))
+            transaction.type = Constant.INCOME
         }
 
+        // Listener for the expense button
         binding.expenseBtn.setOnClickListener {
             binding.incomeBtn.setBackgroundResource(R.drawable.default_selector)
             binding.expenseBtn.setBackgroundResource(R.drawable.expense_selector)
-            binding.incomeBtn.setTextColor(resources.getColor(R.color.textColor))
-            binding.expenseBtn.setTextColor(resources.getColor(R.color.redColor))
+            binding.incomeBtn.setTextColor(ContextCompat.getColor(requireContext(), R.color.textColor))
+            binding.expenseBtn.setTextColor(ContextCompat.getColor(requireContext(), R.color.redColor))
+            transaction.type = Constant.EXPENSE
+        }
 
-            transaction.type = Constants.EXPENSE
+        // Save button listener
+        binding.saveTransactionBtn.setOnClickListener {
+            if (isValidInput()) {
+                transaction.account = binding.account.text.toString()
+                transaction.category = binding.category.text.toString()
+                transaction.date = binding.date.text.toString()  // Already in "dd-MMM-yyyy" format
+                transaction.amount = binding.amount.text.toString().toDouble()
+
+                // Notify listener (Homepage) about the saved transaction
+                listener?.onTransactionSaved(transaction)
+
+                // Close the fragment
+                requireActivity().onBackPressed()
+            } else {
+                showToast("Please fill all the fields correctly!")
+            }
         }
     }
 
+    private fun isValidInput(): Boolean {
+        val amountText = binding.amount.text?.toString()
+        val amountValue = amountText?.toDoubleOrNull() ?: -1.0
+
+        return !binding.amount.text.isNullOrEmpty() &&
+                !binding.date.text.isNullOrEmpty() &&
+                !binding.account.text.isNullOrEmpty() &&
+                !binding.category.text.isNullOrEmpty() &&
+                amountValue > 0
+    }
+
+    private fun showDatePickerDialog() {
+        val calendar = Calendar.getInstance()
+
+        val datePickerDialog = DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth ->
+                calendar.set(year, month, dayOfMonth)
+                binding.date.setText(
+                    SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault()).format(calendar.time)
+                )
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+
+        datePickerDialog.show()
+    }
+
+
     private fun showAccountSelectionDialog() {
-        // Inflate the dialog view
         val dialogBinding = ListDialogBinding.inflate(LayoutInflater.from(requireContext()))
         val accountsDialog = AlertDialog.Builder(requireContext()).create()
         accountsDialog.setView(dialogBinding.root)
 
-        // Create a list of accounts
         val accounts = arrayListOf(
             Account("Cash", 0.0),
             Account("Bank", 0.0),
@@ -89,30 +153,19 @@ class AddTransactionFragment : Fragment() {
             Account("Other", 0.0)
         )
 
-        // Set up the adapter for the RecyclerView
-        val adapter = AccountsAdapter(
-            requireContext(),
-            accounts,
-            object : AccountsAdapter.AccountsClickListener {
-                override fun onAccountSelected(account: Account) {
-                    // Set the selected account name to the input field
-                    binding.account.setText(account.accountName)
-                    // Assign the account to the transaction object
-                    transaction.account = account.accountName
-                    // Dismiss the dialog
-                    accountsDialog.dismiss()
-                }
+        val adapter = AccountsAdapter(requireContext(), accounts, object : AccountsAdapter.AccountsClickListener {
+            override fun onAccountSelected(account: Account) {
+                binding.account.setText(account.accountName)
+                transaction.account = account.accountName
+                accountsDialog.dismiss()
             }
-        )
+        })
 
         dialogBinding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         dialogBinding.recyclerView.adapter = adapter
-
-        // Optional: Add item decoration for better UI
-        val itemDecoration = DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL)
-        dialogBinding.recyclerView.addItemDecoration(itemDecoration)
-
-        // Show the dialog
+        dialogBinding.recyclerView.addItemDecoration(
+            DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL)
+        )
         accountsDialog.show()
     }
 
@@ -130,54 +183,25 @@ class AddTransactionFragment : Fragment() {
             Category("Other", R.drawable.ic_other, R.color.greenColor)
         )
 
-        val categoryAdapter = CategoryAdapter(
-            requireContext(),
-            categories,
-            object : CategoryAdapter.CategoryClickListener {
-                override fun onCategoryClicked(category: Category) {
-                    binding.category.setText(category.categoryName)
-                    transaction.category = category.categoryName
-                    categoryDialog.dismiss()
-                }
+        val categoryAdapter = CategoryAdapter(requireContext(), categories, object : CategoryAdapter.CategoryClickListener {
+            override fun onCategoryClicked(category: Category) {
+                binding.category.setText(category.categoryName)
+                transaction.category = category.categoryName
+                categoryDialog.dismiss()
             }
-        )
+        })
 
         dialogBinding.recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
         dialogBinding.recyclerView.adapter = categoryAdapter
         categoryDialog.show()
     }
 
-    private fun showDatePickerDialog() {
-        val calendar = Calendar.getInstance()
-
-        val datePickerDialog = DatePickerDialog(
-            requireContext(),
-            { _, year, month, dayOfMonth ->
-                calendar.set(Calendar.YEAR, year)
-                calendar.set(Calendar.MONTH, month)
-                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-
-                val dateFormat = SimpleDateFormat("dd-MMM, yyyy", Locale.getDefault())
-                binding.date.setText(dateFormat.format(calendar.time))
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        )
-
-        datePickerDialog.show()
+    private fun showToast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    // Data classes for Transaction and Account
-    data class Transaction(var account: String = "", var category: String = "", var type: String = "")
-
-    object Constants {
-        const val INCOME = "Income"
-        const val EXPENSE = "Expense"
     }
 }

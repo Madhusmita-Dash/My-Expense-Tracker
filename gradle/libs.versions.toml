@@ -13,6 +13,7 @@ googleGmsGoogleServices = "4.4.2"
 firebaseAuth = "23.0.0"
 uiTestAndroid = "1.7.5"
 roomCommon = "2.6.1"
+identityCredential = "20231002"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -26,6 +27,7 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
 androidx-ui-test-android = { group = "androidx.compose.ui", name = "ui-test-android", version.ref = "uiTestAndroid" }
 androidx-room-common = { group = "androidx.room", name = "room-common", version.ref = "roomCommon" }
+identity-credential = { group = "com.android.identity", name = "identity-credential", version.ref = "identityCredential" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

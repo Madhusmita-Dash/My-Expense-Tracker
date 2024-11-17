@@ -1,12 +1,16 @@
 package com.example.expensetracker
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.core.content.ContextCompat
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -14,9 +18,7 @@ import com.google.android.material.tabs.TabLayout
 import java.text.SimpleDateFormat
 import java.util.*
 
-class Homepage : AppCompatActivity() {
-
-
+class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedListener {
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var tabLayout: TabLayout
@@ -28,13 +30,17 @@ class Homepage : AppCompatActivity() {
     private lateinit var totalTextView: TextView
     private lateinit var backArrow: ImageView
     private lateinit var forwardArrow: ImageView
+    private lateinit var transactionsRecyclerView: RecyclerView
+    private lateinit var transactionsAdapter: TransactionsAdapter
+
     private val calendar = Calendar.getInstance()
+    private val transactions = ArrayList<Transaction>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_homepage)
 
-        // Initialize views
+        // Initializing views
         toolbar = findViewById(R.id.toolbar)
         tabLayout = findViewById(R.id.tabLayout)
         bottomNavigationView = findViewById(R.id.bottomNavigationView)
@@ -45,98 +51,88 @@ class Homepage : AppCompatActivity() {
         totalTextView = findViewById(R.id.textView9)
         backArrow = findViewById(R.id.imageView)
         forwardArrow = findViewById(R.id.imageView3)
+        transactionsRecyclerView = findViewById(R.id.transactionsRecyclerView)
 
-        // Set toolbar
         setSupportActionBar(toolbar)
 
-        // Set initial date
+        // Setting up RecyclerView adapter
+        transactionsAdapter = TransactionsAdapter(this, transactions)
+        transactionsRecyclerView.layoutManager = LinearLayoutManager(this)
+        transactionsRecyclerView.adapter = transactionsAdapter
+
         updateDateTextView()
 
-        // Setup TabLayout and navigation listeners
+        // Setup TabLayout and BottomNavigationView
         setupTabLayout()
         setupBottomNavigation()
 
-        // Set up floating action button listener to open fragment
         floatingActionButton.setOnClickListener {
             openFragment(AddTransactionFragment())
         }
 
-        // Set up back and forward arrow listeners
-        backArrow.setOnClickListener {
-            changeDate(-1) // Go to the previous day
-        }
-
-        forwardArrow.setOnClickListener {
-            changeDate(1) // Go to the next day
-        }
-
-        // Dummy values for income, expense, and total (Update with actual data)
-        setIncomeExpenseTotal(1000.0, 500.0)
+        // Date navigation
+        backArrow.setOnClickListener { updateDate(-1) }
+        forwardArrow.setOnClickListener { updateDate(1) }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.top_menu, menu)
-        return super.onCreateOptionsMenu(menu)
+    override fun onTransactionSaved(transaction: Transaction) {
+        transactions.add(transaction)
+        transactionsAdapter.notifyItemInserted(transactions.size - 1)
+        updateIncomeExpenseTotals()
     }
+
+    private fun updateIncomeExpenseTotals() {
+        var totalIncome = 0.0
+        var totalExpense = 0.0
+
+        for (transaction in transactions) {
+            if (transaction.type == Constant.INCOME) {
+                totalIncome += transaction.amount
+            } else {
+                totalExpense += transaction.amount
+            }
+        }
+
+        incomeTextView.text = totalIncome.toString()
+        expenseTextView.text = totalExpense.toString()
+        totalTextView.text = (totalIncome - totalExpense).toString()
+    }
+
+    private fun updateDate(increment: Int) {
+        calendar.add(Calendar.MONTH, increment)
+        updateDateTextView()
+    }
+
+    private fun updateDateTextView() {
+        val dateFormat = SimpleDateFormat("dd MMM, yyyy", Locale.getDefault()) // Updated format
+        currentDateTextView.text = dateFormat.format(calendar.time)
+    }
+
 
     private fun setupTabLayout() {
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
-                when (tab.position) {
-                    0 -> showToast("Daily tab selected")
-                    1 -> showToast("Monthly tab selected")
-                    2 -> showToast("Calendar tab selected")
-                    3 -> showToast("Summary tab selected")
-                    4 -> showToast("Notes tab selected")
-                }
-            }
-
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
+            override fun onTabSelected(tab: TabLayout.Tab?) {}
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
     }
 
     private fun setupBottomNavigation() {
         bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.transactions -> showToast("Transactions selected")
-                R.id.stats -> showToast("Stats selected")
-                R.id.accounts -> showToast("Accounts selected")
+                R.id.transactions -> showToast("Home clicked")
+                R.id.stats -> showToast("Status clicked")
+                R.id.accounts -> showToast("Account clicked")
             }
             true
         }
     }
 
-    private fun updateDateTextView() {
-        val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-        currentDateTextView.text = dateFormat.format(calendar.time)
-    }
-
-    private fun changeDate(days: Int) {
-        calendar.add(Calendar.DAY_OF_YEAR, days)
-        updateDateTextView()
-    }
-
-    private fun setIncomeExpenseTotal(income: Double, expense: Double) {
-        incomeTextView.text = String.format("%.2f", income)
-        expenseTextView.text = String.format("%.2f", expense)
-        totalTextView.text = String.format("%.2f", income - expense)
-    }
-
     private fun openFragment(fragment: Fragment) {
-        // Open fragment as BottomSheet
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.main, fragment)
-            .addToBackStack(null)
-            .commit()
-    }
-
-    override fun onBackPressed() {
-        if (supportFragmentManager.backStackEntryCount > 0) {
-            supportFragmentManager.popBackStack()
-        } else {
-            super.onBackPressed()
-        }
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.fragmentContainer, fragment)
+        transaction.addToBackStack(null)
+        transaction.commit()
     }
 
     private fun showToast(message: String) {

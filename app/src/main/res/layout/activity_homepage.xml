@@ -21,9 +21,6 @@
         app:titleTextColor="@color/white"/>
 
     <!-- LinearLayout with Back and Forward Arrows -->
-
-    <!-- TabLayout Below LinearLayout -->
-
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
@@ -69,6 +66,7 @@
             app:srcCompat="@drawable/ic_chevron" />
     </LinearLayout>
 
+    <!-- TabLayout Below LinearLayout -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
@@ -105,11 +103,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Notes" />
-
     </com.google.android.material.tabs.TabLayout>
 
     <!-- Income, Expense, and Total Section Below TabLayout -->
-
     <LinearLayout
         android:id="@+id/linearLayout2"
         android:layout_width="match_parent"
@@ -205,6 +201,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:menu="@menu/bottom_menu" />
 
+    <!-- Floating Action Button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floatingActionButton"
         android:layout_width="wrap_content"
@@ -220,8 +217,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/ic_plus" />
 
+    <!-- RecyclerView for Transactions -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/transactionlistview"
+        android:id="@+id/transactionsRecyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         tools:listitem="@layout/row_transaction"
@@ -231,4 +229,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/linearLayout2" />
 
+    <!-- FrameLayout for Fragments -->
+    <FrameLayout
+        android:id="@+id/fragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toBottomOf="@id/linearLayout2"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigationView" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -30,9 +30,7 @@
             android:name=".Login"
             android:exported="false" />
 
-        <activity
-            android:name=".Categories"
-            android:exported="false" />
+
 
         <activity
             android:name=".Homepage"

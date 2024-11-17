@@ -30,25 +30,6 @@ class TransactionsAdapter(
             Helper.formatDate(it)
         } ?: "Date not available"
 
-
-
-
-        // Get category details from Constants
-        val transactionCategory = Constant.getCategoryDetails(transaction.category)
-
-        // Set category icon and background color
-        transactionCategory?.let {
-            holder.binding.categoryIcon.setImageResource(it.categoryImage)
-            holder.binding.categoryIcon.setBackgroundTintList(
-                context.getColorStateList(it.categoryColor)
-            )
-        }
-
-        // Set account label background color based on account
-        holder.binding.accountLbl.setBackgroundTintList(
-            context.getColorStateList(Constant.getAccountsColor(transaction.account))
-        )
-
         // Set the amount color based on the transaction type (INCOME or EXPENSE)
         if (transaction.type == Constant.INCOME) {
             holder.binding.transactionAmount.setTextColor(context.getColor(R.color.dark_green))
@@ -57,8 +38,8 @@ class TransactionsAdapter(
         }
     }
 
-
     override fun getItemCount(): Int = transactions.size
 
-    inner class TransactionViewHolder(val binding: RowTransactionBinding) : RecyclerView.ViewHolder(binding.root)
+    inner class TransactionViewHolder(val binding: RowTransactionBinding) :
+        RecyclerView.ViewHolder(binding.root)
 }

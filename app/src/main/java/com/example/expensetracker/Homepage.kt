@@ -72,7 +72,8 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
         setupBottomNavigation()
 
         floatingActionButton.setOnClickListener {
-            openFragment(AddTransactionFragment())
+            // Pass the selected date to the fragment
+            openFragment(AddTransactionFragment.newInstance(calendar.time))
         }
 
         backArrow.setOnClickListener { updateDate(-1) }
@@ -82,9 +83,10 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
     }
 
     override fun onTransactionSaved(transaction: Transaction) {
-        // Use coroutine to save the transaction in the Realm database
         lifecycleScope.launch {
             realm.write {
+                // Save the transaction with the selected date
+                transaction.date = Helper.formatDate(calendar.time)
                 copyToRealm(transaction)
             }
 
@@ -110,7 +112,7 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
 
         incomeTextView.text = totalIncome.toString()
         expenseTextView.text = totalExpense.toString()
-        totalTextView.text = (totalIncome - totalExpense).toString()
+        totalTextView.text = (totalIncome - totalExpense).toString() // Net balance
     }
 
     private fun updateDate(increment: Int) {
@@ -125,17 +127,17 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
     }
 
     private fun loadTransactionsForCurrentDate() {
-        val selectedDate = Helper.formatDate(calendar.time)
+        lifecycleScope.launch {
+            val formattedDate = Helper.formatDate(calendar.time)
 
-        // Query Realm for transactions matching the current date
-        val results = realm.query<Transaction>("date == $0", selectedDate).find()
+            val transactionsList = realm.query<Transaction>("date == $0", formattedDate).find()
 
-        // Clear the current list and add transactions for the selected date
-        transactions.clear()
-        transactions.addAll(results)
-        transactionsAdapter.notifyDataSetChanged()
+            transactions.clear()
+            transactions.addAll(transactionsList)
+            transactionsAdapter.notifyDataSetChanged()
 
-        updateIncomeExpenseTotals()
+            updateIncomeExpenseTotals()
+        }
     }
 
     private fun setupTabLayout() {

@@ -32,7 +32,8 @@ object Constant {
     // Get color for account based on account name
     fun getAccountsColor(accountName: String): Int {
         return when (accountName) {
-            "Bank" -> R.color.bank_color  // Ensure these resources exist
+            "Bank" -> R.color.bank_color  // Ensure these resources ex
+            // ist
             "Cash" -> R.color.cash_color
             "Card" -> R.color.card_color
             else -> R.color.default_color

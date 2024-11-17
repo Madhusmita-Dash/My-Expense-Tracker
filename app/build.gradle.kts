@@ -58,6 +58,7 @@ dependencies {
 
     // Add Realm Database dependencies
     implementation("io.realm.kotlin:library-base:1.11.0")
+    implementation(libs.firebase.vertexai)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

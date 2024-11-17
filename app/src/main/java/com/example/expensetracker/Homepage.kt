@@ -60,7 +60,11 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
         setSupportActionBar(toolbar)
 
         // Setup RecyclerView Adapter
-        transactionsAdapter = TransactionsAdapter(this, transactions)
+        transactionsAdapter = TransactionsAdapter(this, transactions) { transaction ->
+            // Handle the deletion of the transaction here
+            deleteTransaction(transaction)
+        }
+
         transactionsRecyclerView.layoutManager = LinearLayoutManager(this)
         transactionsRecyclerView.adapter = transactionsAdapter
 
@@ -72,8 +76,7 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
         setupBottomNavigation()
 
         floatingActionButton.setOnClickListener {
-            // Pass the selected date to the fragment
-            openFragment(AddTransactionFragment.newInstance(calendar.time))
+            openFragment(AddTransactionFragment())
         }
 
         backArrow.setOnClickListener { updateDate(-1) }
@@ -83,11 +86,11 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
     }
 
     override fun onTransactionSaved(transaction: Transaction) {
+        // Use coroutine to save the transaction in the Realm database
         lifecycleScope.launch {
             realm.write {
-                // Save the transaction with the selected date
-                transaction.date = Helper.formatDate(calendar.time)
-                copyToRealm(transaction)
+                transaction.date = Helper.formatDate(calendar.time) // Ensure the transaction has the correct date
+                copyToRealm(transaction) // Save the transaction to Realm
             }
 
             // Add transaction to the list and update the RecyclerView
@@ -102,6 +105,7 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
         var totalIncome = 0.0
         var totalExpense = 0.0
 
+        // Iterate over all transactions to calculate totals
         for (transaction in transactions) {
             if (transaction.type == Constant.INCOME) {
                 totalIncome += transaction.amount
@@ -128,17 +132,43 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
 
     private fun loadTransactionsForCurrentDate() {
         lifecycleScope.launch {
+            // Format the current date in the format you store in the Realm database
             val formattedDate = Helper.formatDate(calendar.time)
 
+            // Query for transactions based on the selected date
             val transactionsList = realm.query<Transaction>("date == $0", formattedDate).find()
 
+            // Update the transactions list
             transactions.clear()
             transactions.addAll(transactionsList)
             transactionsAdapter.notifyDataSetChanged()
 
+            // Update totals for income and expense
             updateIncomeExpenseTotals()
         }
     }
+
+    private fun deleteTransaction(transaction: Transaction) {
+        // Use Realm to delete the transaction
+        lifecycleScope.launch {
+            realm.write {
+                // Query for the transaction by its ID (assuming 'id' is a field in your Transaction class)
+                val transactionToDelete = query<Transaction>("id == $0", transaction.id).first() // Corrected query
+
+                transactionToDelete?.let {
+                    delete(it)  // Use 'delete' to remove the object from the Realm database
+                }
+            }
+
+            // Optionally, remove from the transactions list and notify the adapter
+            transactions.remove(transaction)
+            transactionsAdapter.notifyDataSetChanged()
+
+            Toast.makeText(this@Homepage, "Transaction deleted", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
 
     private fun setupTabLayout() {
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {

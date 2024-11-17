@@ -38,6 +38,8 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
     private val transactions = ArrayList<Transaction>()
     private lateinit var realm: Realm
 
+    private var isMonthlyView = false // Flag to determine the current view mode
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_homepage)
@@ -61,10 +63,8 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
 
         // Setup RecyclerView Adapter
         transactionsAdapter = TransactionsAdapter(this, transactions) { transaction ->
-            // Handle the deletion of the transaction here
             deleteTransaction(transaction)
         }
-
         transactionsRecyclerView.layoutManager = LinearLayoutManager(this)
         transactionsRecyclerView.adapter = transactionsAdapter
 
@@ -86,17 +86,14 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
     }
 
     override fun onTransactionSaved(transaction: Transaction) {
-        // Use coroutine to save the transaction in the Realm database
         lifecycleScope.launch {
             realm.write {
-                transaction.date = Helper.formatDate(calendar.time) // Ensure the transaction has the correct date
-                copyToRealm(transaction) // Save the transaction to Realm
+                transaction.date = Helper.formatDate(calendar.time)
+                copyToRealm(transaction)
             }
 
-            // Add transaction to the list and update the RecyclerView
             transactions.add(transaction)
             transactionsAdapter.notifyItemInserted(transactions.size - 1)
-
             updateIncomeExpenseTotals()
         }
     }
@@ -105,7 +102,6 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
         var totalIncome = 0.0
         var totalExpense = 0.0
 
-        // Iterate over all transactions to calculate totals
         for (transaction in transactions) {
             if (transaction.type == Constant.INCOME) {
                 totalIncome += transaction.amount
@@ -116,63 +112,93 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
 
         incomeTextView.text = totalIncome.toString()
         expenseTextView.text = totalExpense.toString()
-        totalTextView.text = (totalIncome - totalExpense).toString() // Net balance
+        totalTextView.text = (totalIncome - totalExpense).toString()
     }
 
     private fun updateDate(increment: Int) {
-        calendar.add(Calendar.DATE, increment)
+        if (isMonthlyView) {
+            calendar.add(Calendar.MONTH, increment)
+        } else {
+            calendar.add(Calendar.DATE, increment)
+        }
         updateDateTextView()
-        loadTransactionsForCurrentDate()
+        if (isMonthlyView) {
+            loadTransactionsForCurrentMonth()
+        } else {
+            loadTransactionsForCurrentDate()
+        }
     }
 
     private fun updateDateTextView() {
-        val dateFormat = SimpleDateFormat("dd MMM, yyyy", Locale.getDefault())
+        val dateFormat = if (isMonthlyView) {
+            SimpleDateFormat("MMM yyyy", Locale.getDefault()) // Month and year format
+        } else {
+            SimpleDateFormat("dd MMM, yyyy", Locale.getDefault()) // Full date format
+        }
         currentDateTextView.text = dateFormat.format(calendar.time)
     }
 
     private fun loadTransactionsForCurrentDate() {
         lifecycleScope.launch {
-            // Format the current date in the format you store in the Realm database
             val formattedDate = Helper.formatDate(calendar.time)
-
-            // Query for transactions based on the selected date
             val transactionsList = realm.query<Transaction>("date == $0", formattedDate).find()
 
-            // Update the transactions list
             transactions.clear()
             transactions.addAll(transactionsList)
             transactionsAdapter.notifyDataSetChanged()
 
-            // Update totals for income and expense
+            updateIncomeExpenseTotals()
+        }
+    }
+
+    private fun loadTransactionsForCurrentMonth() {
+        lifecycleScope.launch {
+            val currentMonth = calendar.get(Calendar.MONTH)
+            val currentYear = calendar.get(Calendar.YEAR)
+
+            val transactionsList = realm.query<Transaction>().find().filter {
+                val transactionDate = Helper.parseDate(it.date)
+                transactionDate != null && transactionDate.month == currentMonth && transactionDate.year == currentYear - 1900
+            }
+
+            transactions.clear()
+            transactions.addAll(transactionsList)
+            transactionsAdapter.notifyDataSetChanged()
+
             updateIncomeExpenseTotals()
         }
     }
 
     private fun deleteTransaction(transaction: Transaction) {
-        // Use Realm to delete the transaction
         lifecycleScope.launch {
             realm.write {
-                // Query for the transaction by its ID (assuming 'id' is a field in your Transaction class)
-                val transactionToDelete = query<Transaction>("id == $0", transaction.id).first() // Corrected query
-
-                transactionToDelete?.let {
-                    delete(it)  // Use 'delete' to remove the object from the Realm database
-                }
+                val transactionToDelete = query<Transaction>("id == $0", transaction.id).first()
+                transactionToDelete?.let { delete(it) }
             }
 
-            // Optionally, remove from the transactions list and notify the adapter
             transactions.remove(transaction)
             transactionsAdapter.notifyDataSetChanged()
-
             Toast.makeText(this@Homepage, "Transaction deleted", Toast.LENGTH_SHORT).show()
         }
     }
 
-
-
     private fun setupTabLayout() {
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {}
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.text) {
+                    "Monthly" -> {
+                        isMonthlyView = true
+                        updateDateTextView()
+                        loadTransactionsForCurrentMonth()
+                    }
+                    "Daily" -> {
+                        isMonthlyView = false
+                        updateDateTextView()
+                        loadTransactionsForCurrentDate()
+                    }
+                }
+            }
+
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })

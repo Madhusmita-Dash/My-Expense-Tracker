@@ -1,20 +1,21 @@
 package com.example.expensetracker
 
 import android.os.Bundle
-import android.util.Log
-import android.view.Menu
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.core.content.ContextCompat
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.tabs.TabLayout
+import io.realm.kotlin.Realm
+import io.realm.kotlin.ext.query
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -35,10 +36,13 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
 
     private val calendar = Calendar.getInstance()
     private val transactions = ArrayList<Transaction>()
+    private lateinit var realm: Realm
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_homepage)
+
+        realm = (application as App).realm // Get Realm instance from the Application class
 
         // Initializing views
         toolbar = findViewById(R.id.toolbar)
@@ -55,11 +59,12 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
 
         setSupportActionBar(toolbar)
 
-        // Setting up RecyclerView adapter
+        // Setup RecyclerView Adapter
         transactionsAdapter = TransactionsAdapter(this, transactions)
         transactionsRecyclerView.layoutManager = LinearLayoutManager(this)
         transactionsRecyclerView.adapter = transactionsAdapter
 
+        // Setup Date display and navigation
         updateDateTextView()
 
         // Setup TabLayout and BottomNavigationView
@@ -70,15 +75,25 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
             openFragment(AddTransactionFragment())
         }
 
-        // Date navigation
         backArrow.setOnClickListener { updateDate(-1) }
         forwardArrow.setOnClickListener { updateDate(1) }
+
+        loadTransactionsForCurrentDate()
     }
 
     override fun onTransactionSaved(transaction: Transaction) {
-        transactions.add(transaction)
-        transactionsAdapter.notifyItemInserted(transactions.size - 1)
-        updateIncomeExpenseTotals()
+        // Use coroutine to save the transaction in the Realm database
+        lifecycleScope.launch {
+            realm.write {
+                copyToRealm(transaction)
+            }
+
+            // Add transaction to the list and update the RecyclerView
+            transactions.add(transaction)
+            transactionsAdapter.notifyItemInserted(transactions.size - 1)
+
+            updateIncomeExpenseTotals()
+        }
     }
 
     private fun updateIncomeExpenseTotals() {
@@ -99,15 +114,29 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
     }
 
     private fun updateDate(increment: Int) {
-        calendar.add(Calendar.MONTH, increment)
+        calendar.add(Calendar.DATE, increment)
         updateDateTextView()
+        loadTransactionsForCurrentDate()
     }
 
     private fun updateDateTextView() {
-        val dateFormat = SimpleDateFormat("dd MMM, yyyy", Locale.getDefault()) // Updated format
+        val dateFormat = SimpleDateFormat("dd MMM, yyyy", Locale.getDefault())
         currentDateTextView.text = dateFormat.format(calendar.time)
     }
 
+    private fun loadTransactionsForCurrentDate() {
+        val selectedDate = Helper.formatDate(calendar.time)
+
+        // Query Realm for transactions matching the current date
+        val results = realm.query<Transaction>("date == $0", selectedDate).find()
+
+        // Clear the current list and add transactions for the selected date
+        transactions.clear()
+        transactions.addAll(results)
+        transactionsAdapter.notifyDataSetChanged()
+
+        updateIncomeExpenseTotals()
+    }
 
     private fun setupTabLayout() {
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {

@@ -58,45 +58,45 @@ class AddTransactionFragment : Fragment() {
 
     private fun setupListeners() {
         // Listener for the account field
-        binding.account.setOnClickListener {
+        binding.transactionAccount.setOnClickListener {
             showAccountSelectionDialog()
         }
 
         // Listener for the category field
-        binding.category.setOnClickListener {
+        binding.transactionCategory.setOnClickListener {
             showCategorySelectionDialog()
         }
 
         // Listener for the date field
-        binding.date.setOnClickListener {
+        binding.transactionDate.setOnClickListener {
             showDatePickerDialog()
         }
 
         // Listener for the income button
-        binding.incomeBtn.setOnClickListener {
-            binding.incomeBtn.setBackgroundResource(R.drawable.income_selector)
-            binding.expenseBtn.setBackgroundResource(R.drawable.default_selector)
-            binding.incomeBtn.setTextColor(ContextCompat.getColor(requireContext(), R.color.greenColor))
-            binding.expenseBtn.setTextColor(ContextCompat.getColor(requireContext(), R.color.textColor))
+        binding.radioButtonIncome.setOnClickListener {
+            binding.radioButtonIncome.setBackgroundResource(R.drawable.income_selector)
+            binding.radioButtonExpense.setBackgroundResource(R.drawable.default_selector)
+            binding.radioButtonIncome.setTextColor(ContextCompat.getColor(requireContext(), R.color.greenColor))
+            binding.radioButtonExpense.setTextColor(ContextCompat.getColor(requireContext(), R.color.textColor))
             transaction.type = Constant.INCOME
         }
 
         // Listener for the expense button
-        binding.expenseBtn.setOnClickListener {
-            binding.incomeBtn.setBackgroundResource(R.drawable.default_selector)
-            binding.expenseBtn.setBackgroundResource(R.drawable.expense_selector)
-            binding.incomeBtn.setTextColor(ContextCompat.getColor(requireContext(), R.color.textColor))
-            binding.expenseBtn.setTextColor(ContextCompat.getColor(requireContext(), R.color.redColor))
+        binding.radioButtonExpense.setOnClickListener {
+            binding.radioButtonIncome.setBackgroundResource(R.drawable.default_selector)
+            binding.radioButtonExpense.setBackgroundResource(R.drawable.expense_selector)
+            binding.radioButtonIncome.setTextColor(ContextCompat.getColor(requireContext(), R.color.textColor))
+            binding.radioButtonExpense.setTextColor(ContextCompat.getColor(requireContext(), R.color.redColor))
             transaction.type = Constant.EXPENSE
         }
 
         // Save button listener
         binding.saveTransactionBtn.setOnClickListener {
             if (isValidInput()) {
-                transaction.account = binding.account.text.toString()
-                transaction.category = binding.category.text.toString()
-                transaction.date = binding.date.text.toString()  // Already in "dd-MMM-yyyy" format
-                transaction.amount = binding.amount.text.toString().toDouble()
+                transaction.account = binding.transactionAccount.text.toString()
+                transaction.category = binding.transactionCategory.text.toString()
+                transaction.date = binding.transactionDate.text.toString()  // Already in "dd-MMM-yyyy" format
+                transaction.amount = binding.transactionAmount.text.toString().toDouble()
 
                 // Notify listener (Homepage) about the saved transaction
                 listener?.onTransactionSaved(transaction)
@@ -110,13 +110,13 @@ class AddTransactionFragment : Fragment() {
     }
 
     private fun isValidInput(): Boolean {
-        val amountText = binding.amount.text?.toString()
+        val amountText = binding.transactionAmount.text?.toString()
         val amountValue = amountText?.toDoubleOrNull() ?: -1.0
 
-        return !binding.amount.text.isNullOrEmpty() &&
-                !binding.date.text.isNullOrEmpty() &&
-                !binding.account.text.isNullOrEmpty() &&
-                !binding.category.text.isNullOrEmpty() &&
+        return !binding.transactionAmount.text.isNullOrEmpty() &&
+                !binding.transactionDate.text.isNullOrEmpty() &&
+                !binding.transactionAccount.text.isNullOrEmpty() &&
+                !binding.transactionCategory.text.isNullOrEmpty() &&
                 amountValue > 0
     }
 
@@ -127,9 +127,9 @@ class AddTransactionFragment : Fragment() {
             requireContext(),
             { _, year, month, dayOfMonth ->
                 calendar.set(year, month, dayOfMonth)
-                binding.date.setText(
-                    SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault()).format(calendar.time)
-                )
+                // Set the date to the TextView
+                val selectedDate = SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault()).format(calendar.time)
+                binding.transactionDate.setText(selectedDate)
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
@@ -138,7 +138,6 @@ class AddTransactionFragment : Fragment() {
 
         datePickerDialog.show()
     }
-
 
     private fun showAccountSelectionDialog() {
         val dialogBinding = ListDialogBinding.inflate(LayoutInflater.from(requireContext()))
@@ -155,7 +154,7 @@ class AddTransactionFragment : Fragment() {
 
         val adapter = AccountsAdapter(requireContext(), accounts, object : AccountsAdapter.AccountsClickListener {
             override fun onAccountSelected(account: Account) {
-                binding.account.setText(account.accountName)
+                binding.transactionAccount.setText(account.accountName)
                 transaction.account = account.accountName
                 accountsDialog.dismiss()
             }
@@ -185,7 +184,7 @@ class AddTransactionFragment : Fragment() {
 
         val categoryAdapter = CategoryAdapter(requireContext(), categories, object : CategoryAdapter.CategoryClickListener {
             override fun onCategoryClicked(category: Category) {
-                binding.category.setText(category.categoryName)
+                binding.transactionCategory.setText(category.categoryName)
                 transaction.category = category.categoryName
                 categoryDialog.dismiss()
             }

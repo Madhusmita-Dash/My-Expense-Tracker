@@ -1,7 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    alias(libs.plugins.google.gms.google.services)  // Ensure this is placed here
+    alias(libs.plugins.google.gms.google.services) // Already included
+    id("io.realm.kotlin") // Apply Realm plugin here
 }
 
 android {
@@ -9,8 +10,8 @@ android {
     compileSdk = 34
 
     buildFeatures {
-        compose = false  // Disable if not using Jetpack Compose
-        viewBinding = true  // Correct ViewBinding configuration
+        compose = false  // Disable Jetpack Compose if not needed
+        viewBinding = true  // Enable ViewBinding
     }
 
     defaultConfig {
@@ -55,8 +56,10 @@ dependencies {
     // Add Multidex support
     implementation("androidx.multidex:multidex:2.0.1")
 
+    // Add Realm Database dependencies
+    implementation("io.realm.kotlin:library-base:1.11.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
-

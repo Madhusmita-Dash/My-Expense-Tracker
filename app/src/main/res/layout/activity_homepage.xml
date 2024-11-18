@@ -9,6 +9,7 @@
     tools:context=".Homepage">
 
     <!-- Material Toolbar -->
+
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -21,6 +22,7 @@
         app:titleTextColor="@color/white"/>
 
     <!-- LinearLayout with Back and Forward Arrows -->
+
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
@@ -234,6 +236,19 @@
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigationView"
         app:layout_constraintTop_toBottomOf="@id/linearLayout2"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavigationView" />
+
+        app:layout_constraintVertical_bias="0.76"
+        tools:layout_editor_absoluteX="-16dp" >
+
+        <Button
+            android:id="@+id/logoutButton"
+            android:layout_width="108dp"
+            android:layout_height="65dp"
+            android:drawableLeft="@drawable/baseline_logout_24"
+            tools:ignore="SpeakableTextPresentCheck"
+            android:layout_marginLeft="300dp"
+            android:backgroundTint="@color/customTeal"/>
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, Login::class.java)) // Ensure Login::class.java points to your actual login activity
         }
 
+
         // Optional: Customize ImageView or TextViews if needed
             imageView.setImageResource(R.drawable.spalshscreen) // Make sure the drawable resource exists
             textView.text = getString(R.string.spend_smarter_nsave_more)

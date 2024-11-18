@@ -72,9 +72,36 @@ class Login : AppCompatActivity() {
         }
 
         // Set click listener for the "Forgot password?" text
+        // Set click listener for the "Forgot password?" text
         forgotPasswordTextView.setOnClickListener {
-            // Handle forgot password (e.g., navigate to a ForgotPasswordActivity or reset password flow)
-            Toast.makeText(this, "Forgot password clicked.", Toast.LENGTH_SHORT).show()
+            val email = usernameEditText.text.toString()
+
+            // Check if the email field is not empty
+            if (TextUtils.isEmpty(email)) {
+                usernameEditText.error = "Please enter your email to reset password."
+                return@setOnClickListener
+            }
+
+            // Send password reset email
+            auth.sendPasswordResetEmail(email)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        // Show confirmation message
+                        Toast.makeText(
+                            this,
+                            "Password reset email sent. Check your inbox.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        // Show error message
+                        Toast.makeText(
+                            this,
+                            "Error: ${task.exception?.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
         }
+
     }
 }

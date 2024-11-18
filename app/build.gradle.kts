@@ -56,6 +56,8 @@ dependencies {
     // Add Multidex support
     implementation("androidx.multidex:multidex:2.0.1")
 
+    implementation ("com.github.AnyChart:AnyChart-Android:1.1.5")
+
     // Add Realm Database dependencies
     implementation("io.realm.kotlin:library-base:1.11.0")
     implementation(libs.firebase.vertexai)

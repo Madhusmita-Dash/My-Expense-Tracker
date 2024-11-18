@@ -1,9 +1,12 @@
 package com.example.expensetracker
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -13,6 +16,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.tabs.TabLayout
+import com.google.firebase.auth.FirebaseAuth
 import io.realm.kotlin.Realm
 import io.realm.kotlin.ext.query
 import kotlinx.coroutines.launch
@@ -34,6 +38,8 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
     private lateinit var transactionsRecyclerView: RecyclerView
     private lateinit var transactionsAdapter: TransactionsAdapter
 
+    private lateinit var auth: FirebaseAuth
+
     private val calendar = Calendar.getInstance()
     private val transactions = ArrayList<Transaction>()
     private lateinit var realm: Realm
@@ -43,6 +49,24 @@ class Homepage : AppCompatActivity(), AddTransactionFragment.OnTransactionSavedL
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_homepage)
+
+        auth = FirebaseAuth.getInstance()
+        val logoutButton = findViewById<Button>(R.id.logoutButton)
+
+        // Set click listener for logout button
+        logoutButton.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Log Out")
+                .setMessage("Are you sure you want to log out?")
+                .setPositiveButton("Yes") { _, _ ->
+                    auth.signOut()
+                    val loginIntent = Intent(this, Login::class.java)
+                    startActivity(loginIntent)
+                    finish()
+                }
+                .setNegativeButton("No", null)
+                .show()
+        }
 
         realm = (application as App).realm // Get Realm instance from the Application class
 
